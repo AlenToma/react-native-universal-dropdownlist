@@ -12,7 +12,7 @@ Cross platform dropdownlist. This component implements a custom dropdownlist and
  <img src="https://github.com/AlenToma/react-native-universal-dropdownlist/blob/main/images/android.PNG" width="200"/>
  
  
- <img src="https://github.com/AlenToma/react-native-universal-dropdownlist/blob/main/images/android.PNG" width="200"/>
+ <img src="https://github.com/AlenToma/react-native-universal-dropdownlist/blob/main/images/Iphone.PNG" width="200"/>
  </div>
  
  

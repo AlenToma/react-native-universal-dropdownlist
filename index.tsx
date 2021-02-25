@@ -11,8 +11,7 @@ import {
   Dimensions,
   SafeAreaView,
 } from 'react-native';
-import EvilIcons from 'react-native-vector-icons/EvilIcons';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import {AntDesign, EvilIcons} from 'react-native-vector-icons';
 const DropDownContext = React.createContext(
   {} as {
     show: (item: React.ReactNode, id: string) => void;
@@ -164,7 +163,6 @@ export const DropDownList = ({
 
   const show = () => {
     var dimHeight = Dimensions.get('window').height;
-    var height = Math.min(dimHeight - (position.height + position.top), styles.list.minHeight) + 100;
     var height = styles.list.minHeight;
 
     dropDownContext.show(
@@ -182,7 +180,7 @@ export const DropDownList = ({
             maxWidth:"98%"
           },
         ]}>
-        {searchAble && height + position.top + position.height <= dimHeight ? (
+        {searchAble && (React.View === undefined || height + position.top + position.height <= dimHeight) ? (
           <View style={styles.searchBarContainer}>
             <EvilIcons name={'search'} size={20} />
             <TextInput
@@ -239,7 +237,7 @@ export const DropDownList = ({
             ))}
           </ScrollView>
         </SafeAreaView>
-         {searchAble && height + position.top + position.height > dimHeight ? (
+         {searchAble && React.View !== undefined && height + position.top + position.height > dimHeight ? (
           <View style={[styles.searchBarContainer, {marginTop:15}]}>
             <EvilIcons name={'search'} size={20} />
             <TextInput

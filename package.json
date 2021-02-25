@@ -1,13 +1,32 @@
 {
   "name": "react-native-universal-dropdownlist",
   "version": "1.0.0",
-  "description": "",
+  "description": "Cross platform dropdownlist. This component implements a custom dropdownlist and provides the same way to drawing it on the different platforms(iOS and Android, Web, Windows). It dose not use any native code. So there is no aditionalal implementation on different platforms. Install the component and enjoy.  ",
   "main": "index.tsx",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "react-native-universal-dropdownlist",
+    "dropdownlist",
+    "react-native",
+    "react-component",
+    "cross platforms",
+    "combobox"
+  ],
   "author": "Alen Toma",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlenToma/react-native-universal-dropdownlist.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AlenToma/react-native-universal-dropdownlist/issues"
+  },
+  "homepage": "https://github.com/AlenToma/react-native-universal-dropdownlist",
+  "dependencies": {
+    "react-native-vector-icons": "^8.1.0"
+  },
   "devDependencies": {
     "react": "^17.0.1",
     "react-native": "^0.63.4"

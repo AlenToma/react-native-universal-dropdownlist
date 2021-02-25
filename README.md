@@ -18,7 +18,7 @@ Cross platform dropdownlist. This component implements a custom dropdownlist and
  
 ## Installations
 
-`npm i react-native-universal-actionsheet`
+`npm i react-native-universal-dropdownlist`
 
 ## Additional Installations
 

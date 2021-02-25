@@ -6,8 +6,13 @@ import {
   ViewStyle,
   StyleProp,
   TouchableOpacity,
-  ScrollView
+  ScrollView,
+  TextInput,
+  Dimensions,
+  SafeAreaView,
 } from 'react-native';
+import EvilIcons from 'react-native-vector-icons/EvilIcons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 const DropDownContext = React.createContext(
   {} as {
     show: (item: React.ReactNode, id: string) => void;
@@ -70,7 +75,7 @@ export const DropDownProvider = ({
   return (
     <DropDownContext.Provider value={appcontextValue}>
       {children}
-      {currentValue ? currentValue : null}
+      <>{currentValue ? currentValue : null}</>
     </DropDownContext.Provider>
   );
 };
@@ -81,6 +86,7 @@ export interface DropDownItem {
   icon: () => React.ReactNode;
 }
 
+var timeout = undefined;
 export const DropDownList = ({
   items,
   selectedValue,
@@ -92,6 +98,8 @@ export const DropDownList = ({
   dropDownListTextStyle,
   dropDownListSelectedTextStyle,
   includeIconOnTextInput,
+  searchAble,
+  searchPlaceHolder,
 }: {
   items: DropDownItem[];
   selectedValue: any;
@@ -103,74 +111,39 @@ export const DropDownList = ({
   dropDownListTextStyle?: StyleProp<ViewStyle>;
   dropDownListSelectedTextStyle?: StyleProp<ViewStyle>;
   includeIconOnTextInput?: boolean;
+  searchAble?: boolean;
+  searchPlaceHolder: string;
 }) => {
   const dropDownContext = useContext(DropDownContext);
   const [visible, setVisible] = useState(false as Boolean);
-  const [id] = useState(new Date().getUTCMilliseconds().toString());
-  const refs = React.createRef<View>();
+  const [id, setId] = useState(new Date().getUTCMilliseconds().toString());
+  const [refs] = useState(React.createRef<TouchableOpacity>());
   const [position, setPosition] = useState(
     {} as { top: number; left: number; height: number; width: number }
   );
+  const [data, setData] = useState(items);
 
-  const show = () => {
-    dropDownContext.show(
-      <View
-        style={[
-          dropDownListStyle,
-          styles.list,
-          {
-            top: position.top + position.height,
-            left: position.left,
-            width: position.width,
-          },
-        ]}>
-        <ScrollView>
-          {items.map((x, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                dropDownItemStyle,
-                styles.dropDownItem,
-                {
-                  width: '100%',
-                  paddingLeft: 5,
-                  backgroundColor:
-                    x.value === selectedValue ? '#ff6358' : undefined,
-                },
-                dropDownListSelectedTextStyle,
-              ]}
-              onPress={() => {
-                onSelect ? onSelect(x) : null;
-                dropDownContext.clear();
-              }}>
-              {x.icon ? x.icon() : null}
-              <Text
-                style={[
-                  dropDownListTextStyle,
-                  {
-                    width: '100%',
-                    paddingLeft: 5,
-                    backgroundColor:
-                      x.value === selectedValue ? '#ff6358' : undefined,
-                    color: x.value === selectedValue ? '#fff' : undefined,
-                  },
-                  dropDownListSelectedTextStyle,
-                ]}>
-                {x.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>,
-      id
-    );
+  const search = (text: string) => {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      setData(
+        text == ''
+          ? items
+          : items.filter(
+              (x) =>
+                x.label
+                  .toLocaleLowerCase()
+                  .indexOf(text.trim().toLocaleLowerCase()) != -1
+            )
+      );
+      show(); // update
+    }, 300);
   };
 
-  useEffect(() => {
-    dropDownContext.registerComponent(id, setVisible);
+  const validatePosition = () => {
     if (refs.current) {
-      refs.current.measure((fx, fy, width, height, px, py) => {
-        setPosition({
+      refs.current.measure(async (fx, fy, width, height, px, py) => {
+        await setPosition({
           top: py,
           left: px,
           height: height,
@@ -178,20 +151,136 @@ export const DropDownList = ({
         });
       });
     }
+  };
+
+  useEffect(() => {
+    if (visible) show();
+  }, [data, position]);
+
+  useEffect(() => {
+    setData(items);
+  }, [visible]);
+
+
+  const show = () => {
+    var dimHeight = Dimensions.get('window').height;
+    var height = Math.min(dimHeight - (position.height + position.top), styles.list.minHeight) + 100;
+    var height = styles.list.minHeight;
+
+    dropDownContext.show(
+      <SafeAreaView
+        style={[
+          dropDownListStyle,
+          styles.list,
+          {
+            top: height + position.top + position.height > dimHeight ?  position.top - height : position.height + position.top,
+            left: position.left,
+            minWidth: position.width,
+            height: height,
+            paddingBottom: 5,
+            overflow: 'hidden',
+            maxWidth:"98%"
+          },
+        ]}>
+        {searchAble && height + position.top + position.height <= dimHeight ? (
+          <View style={styles.searchBarContainer}>
+            <EvilIcons name={'search'} size={20} />
+            <TextInput
+              onChangeText={search}
+              onFocus={validatePosition}
+              placeholder={searchPlaceHolder}
+              style={styles.searchBar}
+            />
+          </View>
+        ) : null}
+
+        <SafeAreaView
+          style={{ maxHeight: '80%', flexGrow: 1, overflow: 'hidden' }}>
+          <ScrollView
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={{ marginBottom: 1 }}>
+            {data.map((x, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  dropDownItemStyle,
+                  styles.dropDownItem,
+                  {
+                    width: '100%',
+                    paddingLeft: 5,
+                    backgroundColor:
+                      x.value === selectedValue ? '#ff6358' : undefined,
+                  },
+                  dropDownListSelectedTextStyle,
+                ]}
+                onPress={() => {
+                  onSelect ? onSelect(x) : null;
+                  dropDownContext.clear();
+                }}>
+                {x.icon ? x.icon() : null}
+                <Text
+                  style={[
+                    dropDownListTextStyle,
+                    {
+                      width: '100%',
+                      paddingLeft: 5,
+                      backgroundColor:
+                        x.value === selectedValue ? '#ff6358' : undefined,
+                      color:
+                        x.value === selectedValue
+                          ? '#fff'
+                          : dropDownListTextStyle?.color ?? 'black',
+                    },
+                    dropDownListSelectedTextStyle,
+                  ]}>
+                  {x.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+         {searchAble && height + position.top + position.height > dimHeight ? (
+          <View style={[styles.searchBarContainer, {marginTop:15}]}>
+            <EvilIcons name={'search'} size={20} />
+            <TextInput
+              onChangeText={search}
+              onFocus={validatePosition}
+              placeholder={searchPlaceHolder}
+              style={styles.searchBar}
+            />
+          </View>
+        ) : null}
+      </SafeAreaView>,
+      id
+    );
+  };
+
+  useEffect(() => {
+    var generatedId = id;
+    while (dropDownContext.component.find((x) => x.id == generatedId)) {
+      generatedId = generatedId + '1';
+    }
+    setId(generatedId);
+    dropDownContext.registerComponent(generatedId, setVisible);
+    Dimensions.addEventListener('change', validatePosition);
 
     return () => {
       dropDownContext.unregisterComponent(id);
+      Dimensions.removeEventListener('change', validatePosition);
     };
   }, []);
 
   return (
     <TouchableOpacity
+      ref={refs}
+      style={[styles.input, style]}
+      onLayout={() => validatePosition()}
       onPress={() => {
         if (visible) dropDownContext.clear();
         else show();
         setVisible(!visible);
       }}>
-      <View style={[styles.input, style]} ref={refs}>
+      <View>
         <Text>
           {selectedValue && items && items.length && includeIconOnTextInput
             ? items.find((x) => x.value == selectedValue)?.icon() ?? null
@@ -203,31 +292,58 @@ export const DropDownList = ({
               : placeHolder}
           </Text>
         </Text>
-        <Text
+        <AntDesign
+          name="caretdown"
+          size={16}
           style={[
             styles.arrow,
             {
-              transform: [{ rotateX: !visible ? '180deg' : '0deg' }],
-              marginTop: !visible ? -4 : 0,
+              transform: [{ rotateX: visible ? '180deg' : '0deg' }],
             },
-          ]}>
-          ^
-        </Text>
+          ]}
+        />
       </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
+  searchBarContainer: {
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    borderColor: '#CCC',
+    borderWidth: 0.5,
+    alignItems: 'center',
+    borderRadius: 2,
+    paddingLeft: 5,
+    left: 0,
+    height: 30,
+    position: 'relative',
+    width: '100%',
+    marginBottom: 5,
+  },
+
+  searchBar: {
+    fontSize: 12,
+    padding: 0,
+    marginBottom: 0,
+    width: '95%',
+    height: '90%',
+    backgroundColor: 'transparent',
+    paddingLeft: 5,
+    borderBottomWidth: 0,
+  },
+
   input: {
     width: '100%',
-    minWidth: 150,
     height: 30,
     borderColor: '#CCC',
     borderWidth: 0.5,
     padding: 5,
     zIndex: 200,
+    minWidth: 200,
   },
+
   arrow: {
     fontSize: 15,
     position: 'absolute',
@@ -242,12 +358,13 @@ const styles = StyleSheet.create({
   },
 
   list: {
-    maxHeight: '50%',
     borderColor: '#CCC',
     borderWidth: 0.5,
     position: 'absolute',
     zIndex: 200,
     backgroundColor: 'white',
     borderTopWidth: 0,
+    minHeight: 200,
+    maxHeight:200
   },
 });

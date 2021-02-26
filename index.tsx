@@ -10,8 +10,10 @@ import {
   TextInput,
   Dimensions,
   SafeAreaView,
+  Platform,
+  TextStyle
 } from 'react-native';
-import {AntDesign, EvilIcons} from 'react-native-vector-icons';
+import { AntDesign, EvilIcons } from 'react-native-vector-icons';
 const DropDownContext = React.createContext(
   {} as {
     show: (item: React.ReactNode, id: string) => void;
@@ -94,6 +96,7 @@ export const DropDownList = ({
   style,
   dropDownListStyle,
   dropDownItemStyle,
+  dropDownItemSelectedStyle,
   dropDownListTextStyle,
   dropDownListSelectedTextStyle,
   includeIconOnTextInput,
@@ -107,11 +110,12 @@ export const DropDownList = ({
   style?: StyleProp<ViewStyle>;
   dropDownListStyle?: StyleProp<ViewStyle>;
   dropDownItemStyle?: StyleProp<ViewStyle>;
-  dropDownListTextStyle?: StyleProp<ViewStyle>;
-  dropDownListSelectedTextStyle?: StyleProp<ViewStyle>;
+  dropDownItemSelectedStyle?: StyleProp<ViewStyle>;
+  dropDownListTextStyle?: StyleProp<TextStyle>;
+  dropDownListSelectedTextStyle?: StyleProp<TextStyle>;
   includeIconOnTextInput?: boolean;
   searchAble?: boolean;
-  searchPlaceHolder: string;
+  searchPlaceHolder?: string;
 }) => {
   const dropDownContext = useContext(DropDownContext);
   const [visible, setVisible] = useState(false as Boolean);
@@ -129,11 +133,11 @@ export const DropDownList = ({
         text == ''
           ? items
           : items.filter(
-              (x) =>
-                x.label
-                  .toLocaleLowerCase()
-                  .indexOf(text.trim().toLocaleLowerCase()) != -1
-            )
+            (x) =>
+              x.label
+                .toLocaleLowerCase()
+                .indexOf(text.trim().toLocaleLowerCase()) != -1
+          )
       );
       show(); // update
     }, 300);
@@ -151,6 +155,18 @@ export const DropDownList = ({
       });
     }
   };
+
+  const isWeb =() =>{
+    if (Platform.OS === 'ios') {
+      return false;
+    } else if (Platform.OS === 'android') {
+      return false;
+    } else if (Platform.OS === 'web') {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   useEffect(() => {
     if (visible) show();
@@ -171,16 +187,16 @@ export const DropDownList = ({
           dropDownListStyle,
           styles.list,
           {
-            top: height + position.top + position.height > dimHeight ?  position.top - height : position.height + position.top,
+            top: height + position.top + position.height > dimHeight ? position.top - height : position.height + position.top,
             left: position.left,
             minWidth: position.width,
             height: height,
             paddingBottom: 5,
             overflow: 'hidden',
-            maxWidth:"98%"
+            maxWidth: "98%"
           },
         ]}>
-        {searchAble && (React.View === undefined || height + position.top + position.height <= dimHeight) ? (
+        {searchAble && (isWeb() || height + position.top + position.height <= dimHeight) ? (
           <View style={styles.searchBarContainer}>
             <EvilIcons name={'search'} size={20} />
             <TextInput
@@ -193,23 +209,22 @@ export const DropDownList = ({
         ) : null}
 
         <SafeAreaView
-          style={{ maxHeight: '80%', flexGrow: 1, overflow: 'hidden' }}>
+          style={{ maxHeight: '80%',flex:1, overflow: 'hidden' }}>
           <ScrollView
             showsVerticalScrollIndicator={true}
-            contentContainerStyle={{ marginBottom: 1 }}>
+            contentContainerStyle={{ marginBottom: 4 }}>
             {data.map((x, index) => (
               <TouchableOpacity
                 key={index}
                 style={[
-                  dropDownItemStyle,
                   styles.dropDownItem,
                   {
                     width: '100%',
                     paddingLeft: 5,
-                    backgroundColor:
-                      x.value === selectedValue ? '#ff6358' : undefined,
+                    backgroundColor: x.value === selectedValue ? '#ff6358' : undefined,
                   },
-                  dropDownListSelectedTextStyle,
+                  dropDownItemStyle,
+                  x.value === selectedValue ? dropDownItemSelectedStyle : {},
                 ]}
                 onPress={() => {
                   onSelect ? onSelect(x) : null;
@@ -218,18 +233,14 @@ export const DropDownList = ({
                 {x.icon ? x.icon() : null}
                 <Text
                   style={[
-                    dropDownListTextStyle,
-                    {
+                     {
                       width: '100%',
                       paddingLeft: 5,
-                      backgroundColor:
-                        x.value === selectedValue ? '#ff6358' : undefined,
-                      color:
-                        x.value === selectedValue
-                          ? '#fff'
-                          : dropDownListTextStyle?.color ?? 'black',
+                      backgroundColor: undefined ,
+                      color: x.value === selectedValue? '#fff' : dropDownListTextStyle?.color ?? 'black',
                     },
-                    dropDownListSelectedTextStyle,
+                    dropDownListTextStyle,
+                    x.value === selectedValue ? dropDownListSelectedTextStyle : {},
                   ]}>
                   {x.label}
                 </Text>
@@ -237,8 +248,8 @@ export const DropDownList = ({
             ))}
           </ScrollView>
         </SafeAreaView>
-         {searchAble && React.View !== undefined && height + position.top + position.height > dimHeight ? (
-          <View style={[styles.searchBarContainer, {marginTop:15}]}>
+        {searchAble && !isWeb() && height + position.top + position.height > dimHeight ? (
+          <View style={[styles.searchBarContainer, { marginTop: 15 }]}>
             <EvilIcons name={'search'} size={20} />
             <TextInput
               onChangeText={search}
@@ -279,14 +290,14 @@ export const DropDownList = ({
         setVisible(!visible);
       }}>
       <View>
-        <Text>
+        <Text style={{textAlign:"left"}}>
           {selectedValue && items && items.length && includeIconOnTextInput
             ? items.find((x) => x.value == selectedValue)?.icon() ?? null
             : null}
           <Text style={{ paddingLeft: 5 }}>
             {selectedValue && items && items.length
               ? items.find((x) => x.value == selectedValue)?.label ??
-                placeHolder
+              placeHolder
               : placeHolder}
           </Text>
         </Text>
@@ -363,6 +374,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopWidth: 0,
     minHeight: 200,
-    maxHeight:200
+    maxHeight: 200
   },
 });

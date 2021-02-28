@@ -14,10 +14,11 @@ import {
   TextStyle
 } from 'react-native';
 import { AntDesign, EvilIcons } from 'react-native-vector-icons';
+var currentDropDownId = "";
 const DropDownContext = React.createContext(
   {} as {
     show: (item: React.ReactNode, id: string) => void;
-    clear: () => void;
+    clear: (id: string) => void;
     component: { id: string; event: (v: boolean) => void }[];
     registerComponent: (id: string, value: (v: boolean) => void) => void;
     unregisterComponent: (id: string) => void;
@@ -34,11 +35,8 @@ export const DropDownProvider = ({
 
   const [appcontextValue] = useState({
     show: (value: React.ReactNode, id: string) => {
-      appcontextValue.component.forEach((x) => {
-        if (x.id != id) {
-          x.event(false);
-        }
-      });
+      currentDropDownId = id;
+      appcontextValue.clear("");
       setCurrentValue(
         <>
           <TouchableOpacity
@@ -51,25 +49,32 @@ export const DropDownProvider = ({
               width: '100%',
               height: '100%',
             }}
-            onPress={() => appcontextValue.clear()}
+            onPress={() => appcontextValue.clear(id)}
           />
           {value}
         </>
       );
     },
-    clear: () => {
-      setCurrentValue(undefined);
-      appcontextValue.component.forEach((x) => x.event(false));
+    clear: (id) => {
+      if (currentDropDownId == id) {
+        setCurrentValue(undefined);
+        currentDropDownId = "";
+      }
+      appcontextValue.component.forEach((x) => {
+        if (x.id != currentDropDownId)
+          x.event(false)
+      });
     },
     component: [] as { id: string; event: (v: boolean) => void }[],
     registerComponent: (id: string, component: (v: boolean) => void) => {
       appcontextValue.component.push({ id: id, event: component });
     },
     unregisterComponent: (id: string) => {
-      appcontextValue.component = appcontextValue.component.slice(
-        appcontextValue.component.findIndex((x) => x.id == id),
-        1
-      );
+      appcontextValue.component = appcontextValue.component.filter(x => x.id != id);
+      if (currentDropDownId === id) {
+        currentDropDownId = ""
+        setCurrentValue(undefined);
+      }
     },
   });
 
@@ -156,7 +161,7 @@ export const DropDownList = ({
     }
   };
 
-  const isWeb =() =>{
+  const isWeb = () => {
     if (Platform.OS === 'ios') {
       return false;
     } else if (Platform.OS === 'android') {
@@ -209,7 +214,7 @@ export const DropDownList = ({
         ) : null}
 
         <SafeAreaView
-          style={{ maxHeight: '80%',flex:1, overflow: 'hidden' }}>
+          style={{ maxHeight: '80%', flex: 1, overflow: 'hidden' }}>
           <ScrollView
             showsVerticalScrollIndicator={true}
             contentContainerStyle={{ marginBottom: 4 }}>
@@ -228,16 +233,16 @@ export const DropDownList = ({
                 ]}
                 onPress={() => {
                   onSelect ? onSelect(x) : null;
-                  dropDownContext.clear();
+                  dropDownContext.clear(id);
                 }}>
                 {x.icon ? x.icon() : null}
                 <Text
                   style={[
-                     {
+                    {
                       width: '100%',
                       paddingLeft: 5,
-                      backgroundColor: undefined ,
-                      color: x.value === selectedValue? '#fff' : dropDownListTextStyle?.color ?? 'black',
+                      backgroundColor: undefined,
+                      color: x.value === selectedValue ? '#fff' : dropDownListTextStyle?.color ?? 'black',
                     },
                     dropDownListTextStyle,
                     x.value === selectedValue ? dropDownListSelectedTextStyle : {},
@@ -274,7 +279,7 @@ export const DropDownList = ({
     Dimensions.addEventListener('change', validatePosition);
 
     return () => {
-      dropDownContext.unregisterComponent(id);
+      dropDownContext.unregisterComponent(generatedId);
       Dimensions.removeEventListener('change', validatePosition);
     };
   }, []);
@@ -285,12 +290,12 @@ export const DropDownList = ({
       style={[styles.input, style]}
       onLayout={() => validatePosition()}
       onPress={() => {
-        if (visible) dropDownContext.clear();
+        if (visible) dropDownContext.clear(id);
         else show();
         setVisible(!visible);
       }}>
       <View>
-        <Text style={{textAlign:"left"}}>
+        <Text style={{ textAlign: "left" }}>
           {selectedValue && items && items.length && includeIconOnTextInput
             ? items.find((x) => x.value == selectedValue)?.icon() ?? null
             : null}
